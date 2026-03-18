@@ -3,62 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca CEP - Versão Final</title>
+    <title>Busca CEP iPad Oficial</title>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 20px; background: #f0f0f5; text-align: center; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
         input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button { width: 100%; padding: 15px; background: #007AFF; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>Consulta de Endereço</h3>
+    <h3>Consulta de CEP</h3>
     <input type="tel" id="cep" placeholder="Digite o CEP" maxlength="8">
-    <button id="btn">BUSCAR CEP</button>
-    <hr>
-    <input type="text" id="rua" placeholder="Logradouro" readonly>
+    <button id="btn" onclick="executarBusca()">BUSCAR AGORA</button>
+    <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+    <input type="text" id="rua" placeholder="Rua" readonly>
     <input type="text" id="cidade" placeholder="Cidade" readonly>
     <input type="text" id="uf" placeholder="UF" readonly>
 </div>
 
 <script>
-    document.getElementById('btn').onclick = async () => {
-        const cep = document.getElementById('cep').value.replace(/\D/g, '');
-        if (cep.length !== 8) return alert("Digite 8 números");
-
-        const btn = document.getElementById('btn');
-        btn.innerText = "Carregando...";
-
-        try {
-            // TENTATIVA 1: Brasil API (com timestamp para evitar cache)
-            const res = await fetch(`https://brasilapi.com.br{cep}?t=${Date.now()}`);
-            
-            if (!res.ok) {
-                // TENTATIVA 2: Se a Brasil API falhar, tenta ViaCEP (Plano B)
-                console.log("Brasil API falhou, tentando ViaCEP...");
-                const res2 = await fetch(`https://viacep.com.br{cep}/json/`);
-                const data2 = await res2.json();
-                
-                if (data2.erro) throw new Error("CEP não existe");
-                
-                document.getElementById('rua').value = data2.logradouro;
-                document.getElementById('cidade').value = data2.localidade;
-                document.getElementById('uf').value = data2.uf;
-            } else {
-                const data = await res.json();
-                document.getElementById('rua').value = data.street || "";
-                document.getElementById('cidade').value = data.city;
-                document.getElementById('uf').value = data.state;
-            }
-        } catch (err) {
-            alert("Erro ao buscar: " + err.message);
-        } finally {
-            btn.innerText = "BUSCAR CEP";
+    function executarBusca() {
+        const input = document.getElementById('cep');
+        const cep = input.value.replace(/\D/g, '');
+        
+        if (cep.length !== 8) {
+            alert("Digite os 8 números do CEP");
+            return;
         }
-    };
+
+        // Remove scripts de consultas anteriores para não travar
+        const scriptAntigo = document.getElementById('script-jsonp');
+        if (scriptAntigo) scriptAntigo.remove();
+
+        // Cria um elemento de script para burlar o erro "Load Failed" do iPad
+        const script = document.createElement('script');
+        script.id = 'script-jsonp';
+        // O parâmetro &callback=finalizarBusca é o segredo aqui
+        script.src = `https://viacep.com.br{cep}/json/?callback=finalizarBusca`;
+        document.body.appendChild(script);
+        
+        document.getElementById('btn').innerText = "Buscando...";
+    }
+
+    // Esta função será chamada automaticamente pelo servidor do ViaCEP
+    function finalizarBusca(dados) {
+        document.getElementById('btn').innerText = "BUSCAR AGORA";
+        
+        if (!("erro" in dados)) {
+            document.getElementById('rua').value = dados.logradouro || "";
+            document.getElementById('cidade').value = dados.localidade || "";
+            document.getElementById('uf').value = dados.uf || "";
+        } else {
+            alert("CEP não encontrado no banco de dados.");
+        }
+    }
 </script>
 
 </body>
 </html>
+
