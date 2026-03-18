@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca CEP iPad</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        input { width: 80%; padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; background: #007aff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h3>Busca CEP</h3>
+    <input type="tel" id="cep" placeholder="Digite o CEP" maxlength="8">
+    <button id="btn">BUSCAR</button>
+    <div id="resultado" style="margin-top:20px; text-align:left;">
+        <input type="text" id="rua" placeholder="Rua" readonly>
+        <input type="text" id="cidade" placeholder="Cidade" readonly>
+    </div>
+
+    <script>
+        document.getElementById('btn').onclick = function() {
+            var cep = document.getElementById('cep').value.replace(/\D/g, '');
+            if (cep.length !== 8) return alert('CEP Inválido');
+
+            // Remove scripts antigos para não acumular
+            var antigo = document.getElementById('scriptcep');
+            if (antigo) antigo.remove();
+
+            // Técnica JSONP: Única que fura o bloqueio local do iPad
+            var script = document.createElement('script');
+            script.id = 'scriptcep';
+            script.src = 'https://viacep.com.br' + cep + '/json/?callback=meu_callback';
+            document.body.appendChild(script);
+        };
+
+        function meu_callback(conteudo) {
+            if (!("erro" in conteudo)) {
+                document.getElementById('rua').value = conteudo.logradouro;
+                document.getElementById('cidade').value = conteudo.localidade;
+            } else {
+                alert("CEP não encontrado.");
+            }
+        }
+    </script>
+</body>
+</html>
