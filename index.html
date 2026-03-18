@@ -3,64 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca CEP iPad Oficial</title>
+    <title>Busca CEP iPad</title>
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 20px; background: #f0f0f5; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; background: #007AFF; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; background: #f2f2f7; text-align: center; }
+        .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); max-width: 350px; margin: 20px auto; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 17px; box-sizing: border-box; }
+        button { width: 100%; padding: 16px; background: #007aff; color: #fff; border: none; border-radius: 10px; font-size: 17px; font-weight: 600; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>Consulta de CEP</h3>
-    <input type="tel" id="cep" placeholder="Digite o CEP" maxlength="8">
-    <button id="btn" onclick="executarBusca()">BUSCAR AGORA</button>
-    <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-    <input type="text" id="rua" placeholder="Rua" readonly>
-    <input type="text" id="cidade" placeholder="Cidade" readonly>
-    <input type="text" id="uf" placeholder="UF" readonly>
+    <h2 style="margin-top:0">Buscar CEP</h2>
+    <input type="tel" id="cepInput" placeholder="00000000" maxlength="8">
+    <button id="btn" onclick="buscar()">CONSULTAR AGORA</button>
+    <div style="margin-top: 20px; text-align: left;">
+        <label style="font-size:12px; color:https://github.com/hebershon/meu-cep/edit/main/index.html#8e8e93">RUA:</label>
+        <input type="text" id="rua" readonly>
+        <label style="font-size:12px; color:#8e8e93">CIDADE:</label>
+        <input type="text" id="cidade" readonly>
+    </div>
 </div>
 
 <script>
-    function executarBusca() {
-        const input = document.getElementById('cep');
-        const cep = input.value.replace(/\D/g, '');
-        
-        if (cep.length !== 8) {
-            alert("Digite os 8 números do CEP");
-            return;
+    // Função global para receber os dados (JSONP)
+    function retorno_cep(dados) {
+        document.getElementById('btn').innerText = "CONSULTAR AGORA";
+        if (!("erro" in dados)) {
+            document.getElementById('rua').value = dados.logradouro;
+            document.getElementById('cidade').value = dados.localidade + " - " + dados.uf;
+        } else {
+            alert("CEP não encontrado.");
         }
-
-        // Remove scripts de consultas anteriores para não travar
-        const scriptAntigo = document.getElementById('script-jsonp');
-        if (scriptAntigo) scriptAntigo.remove();
-
-        // Cria um elemento de script para burlar o erro "Load Failed" do iPad
-        const script = document.createElement('script');
-        script.id = 'script-jsonp';
-        // O parâmetro &callback=finalizarBusca é o segredo aqui
-        script.src = `https://viacep.com.br{cep}/json/?callback=finalizarBusca`;
-        document.body.appendChild(script);
-        
-        document.getElementById('btn').innerText = "Buscando...";
     }
 
-    // Esta função será chamada automaticamente pelo servidor do ViaCEP
-    function finalizarBusca(dados) {
-        document.getElementById('btn').innerText = "BUSCAR AGORA";
-        
-        if (!("erro" in dados)) {
-            document.getElementById('rua').value = dados.logradouro || "";
-            document.getElementById('cidade').value = dados.localidade || "";
-            document.getElementById('uf').value = dados.uf || "";
-        } else {
-            alert("CEP não encontrado no banco de dados.");
-        }
+    function buscar() {
+        var v_cep = document.getElementById('cepInput').value.replace(/\D/g, '');
+        if (v_cep.length !== 8) return alert("Digite 8 números.");
+
+        document.getElementById('btn').innerText = "Buscando...";
+
+        // Remove script anterior se houver
+        var old = document.getElementById('script_cep');
+        if (old) old.parentNode.removeChild(old);
+
+        // Cria o novo script - USANDO HTTPS OBRIGATÓRIO
+        var script = document.createElement('script');
+        script.id = 'script_cep';
+        script.src = 'https://viacep.com.br' + v_cep + '/json/?callback=retorno_cep';
+        document.body.appendChild(script);
     }
 </script>
 
 </body>
 </html>
-
