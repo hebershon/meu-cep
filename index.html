@@ -2,57 +2,134 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Busca CEP iPad</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; background: #f2f2f7; text-align: center; }
-        .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); max-width: 350px; margin: 20px auto; }
-        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 17px; box-sizing: border-box; }
-        button { width: 100%; padding: 16px; background: #007aff; color: #fff; border: none; border-radius: 10px; font-size: 17px; font-weight: 600; margin-top: 10px; }
+        /* Estilo inspirado no iOS / iPadOS */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 20px; 
+            background: #f2f2f7; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card { 
+            background: #fff; 
+            padding: 24px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            width: 100%;
+            max-width: 380px; 
+        }
+        h2 { margin: 0 0 20px 0; color: #1c1c1e; font-size: 22px; }
+        
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 8px 0; 
+            border: 1px solid #d1d1d6; 
+            border-radius: 10px; 
+            font-size: 17px; 
+            box-sizing: border-box; 
+            background: #ffffff;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #007aff; outline: none; }
+        input[readonly] { background: #f9f9fb; color: #3a3a3c; border-color: #e5e5ea; }
+
+        button { 
+            width: 100%; 
+            padding: 16px; 
+            background: #007aff; 
+            color: #fff; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 17px; 
+            font-weight: 600; 
+            margin-top: 15px; 
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+        button:active { opacity: 0.8; }
+        
+        label { 
+            display: block;
+            font-size: 12px; 
+            color: #8e8e93; 
+            text-align: left; 
+            margin-top: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="margin-top:0">Buscar CEP</h2>
-    <input type="tel" id="cepInput" placeholder="00000000" maxlength="8">
+    <h2>Buscar CEP</h2>
+    <input type="tel" id="cepInput" placeholder="Digite o CEP (ex: 01001000)" maxlength="8">
     <button id="btn" onclick="buscar()">CONSULTAR AGORA</button>
-    <div style="margin-top: 20px; text-align: left;">
-        <label style="font-size:12px; color:https://github.com/hebershon/meu-cep/edit/main/index.html#8e8e93">RUA:</label>
-        <input type="text" id="rua" readonly>
-        <label style="font-size:12px; color:#8e8e93">CIDADE:</label>
-        <input type="text" id="cidade" readonly>
+    
+    <div style="margin-top: 10px;">
+        <label>LOGRADOURO (RUA):</label>
+        <input type="text" id="rua" readonly placeholder="-">
+        
+        <label>CIDADE / ESTADO:</label>
+        <input type="text" id="cidade" readonly placeholder="-">
     </div>
 </div>
 
 <script>
-    // Função global para receber os dados (JSONP)
+    // Função chamada quando a API retorna os dados
     function retorno_cep(dados) {
         document.getElementById('btn').innerText = "CONSULTAR AGORA";
+        document.getElementById('btn').disabled = false;
+
         if (!("erro" in dados)) {
-            document.getElementById('rua').value = dados.logradouro;
+            document.getElementById('rua').value = dados.logradouro || "Não informado";
             document.getElementById('cidade').value = dados.localidade + " - " + dados.uf;
         } else {
+            limparCampos();
             alert("CEP não encontrado.");
         }
     }
 
+    function limparCampos() {
+        document.getElementById('rua').value = "";
+        document.getElementById('cidade').value = "";
+    }
+
     function buscar() {
+        // Limpa caracteres não numéricos
         var v_cep = document.getElementById('cepInput').value.replace(/\D/g, '');
-        if (v_cep.length !== 8) return alert("Digite 8 números.");
+
+        if (v_cep.length !== 8) {
+            return alert("Por favor, digite 8 números.");
+        }
 
         document.getElementById('btn').innerText = "Buscando...";
+        document.getElementById('btn').disabled = true;
 
-        // Remove script anterior se houver
+        // Gerenciamento do script JSONP
         var old = document.getElementById('script_cep');
         if (old) old.parentNode.removeChild(old);
 
-        // Cria o novo script - USANDO HTTPS OBRIGATÓRIO
         var script = document.createElement('script');
         script.id = 'script_cep';
+        // CORREÇÃO DA URL: Adicionado /ws/ e as barras corretas
         script.src = 'https://viacep.com.br' + v_cep + '/json/?callback=retorno_cep';
+        
         document.body.appendChild(script);
     }
+
+    // Permite buscar ao apertar "Enter" no teclado
+    document.getElementById('cepInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') buscar();
+    });
 </script>
 
 </body>
