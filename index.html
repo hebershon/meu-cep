@@ -3,71 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca CEP GitHub</title>
+    <title>Busca CEP - GitHub Ready</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f4f9; }
-        .box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; width: 300px; }
-        input { display: block; margin: 10px auto; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; }
-        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; width: 88%; font-weight: bold; }
-        button:hover { background: #218838; }
-        p { font-size: 14px; color: #555; margin: 15px 0; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; text-align: center; background: #f4f7f6; }
+        .box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 320px; }
+        input { display: block; margin: 15px auto; padding: 12px; border: 1px solid #ddd; border-radius: 6px; width: 90%; font-size: 16px; }
+        button { width: 97%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .info { text-align: left; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .info p { margin: 8px 0; color: #444; }
         span { font-weight: bold; color: #000; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h3>Consultar CEP</h3>
+    <h3>Buscar Endereço</h3>
     <input type="text" id="cep" placeholder="00000-000" maxlength="9">
-    <button onclick="buscar()">CONSULTAR</button>
-    
-    <div style="text-align: left; margin-top: 20px;">
+    <button id="btn-buscar">CONSULTAR</button>
+
+    <div class="info">
         <p>Rua: <span id="rua">...</span></p>
         <p>Cidade: <span id="cidade">...</span></p>
     </div>
 </div>
 
 <script>
-    async function buscar() {
-        const input = document.getElementById('cep').value;
-        const cep = input.replace(/\D/g, ''); // Garante que só existam números
+    // Usando EventListener para evitar problemas de escopo no GitHub
+    document.getElementById('btn-buscar').addEventListener('click', buscarEndereco);
+
+    async function buscarEndereco() {
+        const inputCep = document.getElementById('cep');
+        const cep = inputCep.value.replace(/\D/g, '');
 
         if (cep.length !== 8) {
-            alert("Digite um CEP válido com 8 números.");
+            alert("Digite um CEP válido com 8 dígitos.");
             return;
         }
 
-        document.getElementById('rua').innerText = "Carregando...";
-        document.getElementById('cidade').innerText = "Carregando...";
+        // Limpa e avisa que está buscando
+        document.getElementById('rua').innerText = "Buscando...";
+        document.getElementById('cidade').innerText = "Buscando...";
 
         try {
-            // USANDO HTTPS (Obrigatório para GitHub Pages)
-            const url = `https://viacep.com.br${cep}/json/`;
+            // A URL DEVE ter HTTPS para o GitHub aceitar
+            const url = `https://viacep.com.br{cep}/json/`;
             
             const response = await fetch(url);
             
-            if (!response.ok) throw new Error('Erro na rede');
-            
+            if (!response.ok) throw new Error('Erro na resposta do servidor');
+
             const dados = await response.json();
 
             if (dados.erro) {
                 alert("CEP não encontrado!");
-                resetar();
+                resetarCampos();
             } else {
-                document.getElementById('rua').innerText = dados.logradouro || "Não informado";
+                document.getElementById('rua').innerText = dados.logradouro || "Rua não disponível";
                 document.getElementById('cidade').innerText = `${dados.localidade} - ${dados.uf}`;
             }
         } catch (error) {
-            console.error("Erro na busca:", error);
-            alert("Erro ao conectar com o ViaCEP. Verifique sua conexão.");
-            resetar();
+            console.error("Erro na requisição:", error);
+            alert("Erro de conexão. Verifique se o seu navegador está bloqueando o acesso à API.");
+            resetarCampos();
         }
     }
 
-    function resetar() {
+    function resetarCampos() {
         document.getElementById('rua').innerText = "...";
         document.getElementById('cidade').innerText = "...";
     }
+
+    // Máscara simples para o input
+    document.getElementById('cep').addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 5) value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+        e.target.value = value;
+    });
 </script>
 
 </body>
